@@ -20,6 +20,43 @@
       <script src="../../assets/js/html5shiv.js"></script>
       <script src="../../assets/js/respond.min.js"></script>
     <![endif]-->
+        <style>
+        .spinner {
+          display: inline-block;
+          opacity: 0;
+          width: 0;
+
+          -webkit-transition: opacity 0.25s, width 0.25s;
+          -moz-transition: opacity 0.25s, width 0.25s;
+          -o-transition: opacity 0.25s, width 0.25s;
+          transition: opacity 0.25s, width 0.25s;
+        }
+
+        .has-spinner.active-spinner {
+          cursor:progress;
+        }
+
+        .has-spinner.active-spinner .spinner {
+          opacity: 1;
+          width: auto; /* This doesn't work, just fix for unkown width elements */
+        }
+
+        .has-spinner.btn-mini.active-spinner .spinner {
+            width: 10px;
+        }
+
+        .has-spinner.btn-small.active-spinner .spinner {
+            width: 13px;
+        }
+
+        .has-spinner.btn.active-spinner .spinner {
+            width: 16px;
+        }
+
+        .has-spinner.btn-large.active-spinner .spinner {
+            width: 19px;
+        }
+        </style>
   </head>
 
   <body>
@@ -67,7 +104,8 @@
     <div class="jumbotron">
       <div class="container">
         <h2>Парсер Gifts Spb</h2>
-        <p><a id="parse-btn" class="btn btn-primary btn-lg" href="/public_html/parser?action=parse">Сканировать каталог &raquo;</a>
+        <p><a id="parse-btn" data-loading-text='<span class="spinner"><i class="glyphicon glyphicon-spin glyphicon-refresh"></i></span> Обработка' class="btn btn-primary btn-lg has-spinner" href="/public_html/parser?action=parse">
+             Сканировать каталог &raquo;</a>
             <span id='parse-result'></span>
         </p>
       </div>
@@ -90,7 +128,7 @@
               </table> 
           </div>
           <div class="col-md-5">
-              <h4 id="">Исключения <a class="btn btn-primary">Добавить</a></h4>
+              <h4 id="">Исключения <a class="btn btn-primary" data-toggle="modal" href="#add-exception-modal">Добавить</a></h4>
               <table id="exceptions-tbl" class="table table-hover">
                   <thead>
                       <th>Артикул</th>
@@ -106,10 +144,33 @@
       <hr>
 
       <footer>
-        <p>&copy; Company 2013</p>
+        <p>&copy; Gifts Spb 2013</p>
       </footer>
     </div> <!-- /container -->
 
+    <!-- Modal -->
+     <div class="modal fade" id="add-exception-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+       <div class="modal-dialog">
+         <div class="modal-content">
+           <div class="modal-header">
+             <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+             <h4 class="modal-title">Добавить исключение для парсера</h4>
+           </div>
+           <div class="modal-body">
+               <form class="form-inline" role="form" id="exception-form">
+                 <div class="form-group">
+                   <label class="sr-only" for="articul-input">Артикул</label>
+                   <input type="text" class="form-control" id="articul-input" placeholder="Артикул">
+                 </div>
+               </form>
+           </div>
+           <div class="modal-footer">
+             <button type="button" class="btn btn-default" data-dismiss="modal">Отмена</button>
+             <button type="button" id="create-exception-btn" class="btn btn-primary">Добавить</button>
+           </div>
+         </div><!-- /.modal-content -->
+       </div><!-- /.modal-dialog -->
+     </div><!-- /.modal -->
 
     <!-- Bootstrap core JavaScript
     ================================================== -->

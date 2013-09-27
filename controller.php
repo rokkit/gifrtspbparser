@@ -39,6 +39,29 @@ class ParsingException
             return false;
         }
     }
+    public function create($articul)
+    {
+        $db = connect();
+        
+        if($stmt = $db->prepare("INSERT INTO parsing_exceptions(product_code) VALUES (?)")) {
+                     
+            $stmt->bind_param('s',$articul);
+            if($stmt->execute()) {
+                $newId = $stmt->insert_id;
+                $stmt->close(); 
+                echo json_encode(array('result'=>true));
+                return true;
+            }
+            else {
+                $stmt->close(); 
+                echo json_encode(array('result'=>false));
+                return false;
+            }
+        }
+        else {
+            echo "error".$db->error;
+        }   
+    }
 }
 
 /**
@@ -55,7 +78,9 @@ class Product
     public $reserved = null;
     public $delivery_free = null;
     public $delivery_reserved = null;   
-    public $delivery_date = null;   
+    public $delivery_date = null;  
+    public $picture = null;
+    public $picture_thumb = null; 
     
     
     function __construct($id, $art, $name, $unit, $price, $free, $reserved, $delivery_free, $delivery_reserved, $delivery_date)
@@ -74,6 +99,7 @@ class Product
     }
     public function processing_product()
     {
+        
         $db = connect();
         if(ParsingException::find($this->art)) {
             $db->close();
@@ -82,6 +108,7 @@ class Product
         
         $product = getRow($db, "SELECT product_code FROM SC_products WHERE product_code LIKE '".$this->art."' LIMIT 1");
         if($product) {
+            
             if($stmt = $db->prepare("UPDATE SC_products SET name_ru = ?, 
                      Price = ?, 
                      shipping_freight = ? WHERE product_code LIKE ?")) {
@@ -101,14 +128,29 @@ class Product
             }
         }
         else {
+            
             //insert new product
-            if($stmt = $db->prepare("INSERT INTO SC_products(name_ru, 
-                     Price, 
-                     shipping_freight, product_code) VALUES (?,?,?,?)")) {
+            if($stmt = $db->prepare("INSERT INTO SC_products(name_ru, Price, shipping_freight, product_code) VALUES (?,?,?,?)")) {
                          
                 $stmt->bind_param('sdds',$this->name ,$this->price ,$this->delivery_reserved ,$this->art);
                 if($stmt->execute()) {
+                    
                     $newId = $stmt->insert_id;
+                    // $stmt->close(); 
+                    //INSERTING IMAGE
+                    if($stmt = $db->prepare("INSERT INTO SC_product_pictures(productID, filename, thumbnail) VALUES (?,?,?)")) {
+                        
+                        $filename = $this->id.".jpg";
+                        $thumbnail = $this->id."_thm.jpg";
+                        $stmt->bind_param('dss', $newId, $filename, $thumbnail);
+                        $stmt->execute(); 
+                                               //  
+                        // $image_file = "ftp://clients:cLiENts2010@195.2.87.149/catimg_new/300/".$filename; 
+                        // $image_thumb_file = "ftp://clients:cLiENts2010@195.2.87.149/catimg_new/75/".$filename;  
+                        
+                        curl_save_file($_SERVER['DOCUMENT_ROOT']."/public_html/published/publicdata/GIFTSSPBWEBASYST/attachments/SC/products_pictures/".$filename, $image_file);                               curl_save_file($_SERVER['DOCUMENT_ROOT']."/public_html/published/publicdata/GIFTSSPBWEBASYST/attachments/SC/products_pictures/".$thumbnail, $image_thumb_file);
+                        
+                    }
                     $stmt->close(); 
                     return 2;
                 }
@@ -142,6 +184,18 @@ function curl_get_file($URL) {
     curl_close($c);
     if ($contents) return $contents;
     else return $err;
+}
+function curl_save_file($local_file, $remote_file){
+    $ch = curl_init();
+    $fp = fopen ($local_file, 'w+');
+    $ch = curl_init($remote_file);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 50);
+    curl_setopt($ch, CURLOPT_FILE, $fp);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+    curl_setopt($ch, CURLOPT_ENCODING, "");
+    curl_exec($ch);
+    curl_close($ch);
+    fclose($fp);
 }
 function connect()
 {
@@ -281,9 +335,13 @@ function list_parsing_exceptions()
 //Router
 switch($_REQUEST['action']) {
     case 'parse':
+    
         parse_catalog();
     break;
     case 'parsing_exceptions':
         list_parsing_exceptions();
+    break;
+    case 'create_exception':
+        ParsingException::create($_POST['articul']);
     break;
 }
